@@ -4,18 +4,36 @@ from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
 
 X = tf.placeholder(tf.float32, [None, 784])
-W = tf.Variable(tf.truncated_normal([784, 10]))
-b = tf.Variable(tf.zeros([10]))
-init = tf.global_variables_initializer()
+Y_ = tf.placeholder(tf.float32, [None, 10])
 
-# model
-Y = tf.nn.softmax(tf.matmul(X, W) + b)
+L = 200
+M = 100
+N = 60
+O = 30
 
-# placeholder for correct answers
-Y_ = tf.placeholder(tf.float32, [None,10])
+W1 = tf.Variable(tf.truncated_normal([784, L], stddev=0.1))
+B1 = tf.Variable(tf.zeros([L]))
+W2 = tf.Variable(tf.truncated_normal([L, M], stddev=0.1))
+B2 = tf.Variable(tf.zeros([M]))
+W3 = tf.Variable(tf.truncated_normal([M, N], stddev=0.1))
+B3 = tf.Variable(tf.zeros([N]))
+W4 = tf.Variable(tf.truncated_normal([N, O], stddev=0.1))
+B4 = tf.Variable(tf.zeros([O]))
+W5 = tf.Variable(tf.truncated_normal([O, 10], stddev=0.1))
+B5 = tf.Variable(tf.zeros([10]))
+
+# the model
+XX = tf.reshape(X, [-1, 784])
+Y1 = tf.nn.relu(tf.matmul(XX, W1) + B1)
+Y2 = tf.nn.relu(tf.matmul(Y1, W2) + B2)
+Y3 = tf.nn.relu(tf.matmul(Y2, W3) + B3)
+Y4 = tf.nn.relu(tf.matmul(Y3, W4) + B4)
+Yprime = tf.matmul(Y4, W5) + B5
+Y = tf.nn.softmax(Yprime)
 
 # loss function
-cross_entropy = -tf.reduce_sum(Y_ * tf.log(Y))
+cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=Yprime, labels=Y_)
+cross_entropy = tf.reduce_mean(cross_entropy)*100
 
 # X of correct answers found in batch
 is_correct = tf.equal(tf.argmax(Y, 1), tf.argmax(Y_,1))
@@ -24,6 +42,7 @@ accuracy = tf.reduce_mean(tf.cast(is_correct, tf.float32))
 optimizer = tf.train.GradientDescentOptimizer(0.003)
 train_step = optimizer.minimize(cross_entropy)
 
+init = tf.global_variables_initializer()
 sess = tf.Session()
 sess.run(init)
 
